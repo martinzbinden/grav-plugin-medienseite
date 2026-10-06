@@ -1,0 +1,100 @@
+name: Medienseite
+slug: medienseite
+type: plugin
+version: 1.0.0
+description: 'Downloadseite in Bereichen (z.B. Pressebilder, Dokumente, Logos). Jeder Bereich öffentlich oder nur für registrierte Nutzerinnen und Nutzer: Anmeldung per E-Mail-Code, Registrierung mit Freigabe.'
+icon: download
+author:
+  name: Martin Zbinden
+license: MIT
+dependencies:
+  - { name: login, version: '>=3.0' }
+  - { name: email, version: '>=3.0' }
+
+form:
+  validation: loose
+  fields:
+    enabled:
+      type: toggle
+      label: Plugin aktiv
+      highlight: 1
+      default: 1
+      options: { 1: Ja, 0: Nein }
+      validate: { type: bool }
+    bereiche_titel:
+      type: section
+      title: Bereiche
+      text: 'Öffentlich = ohne Anmeldung sichtbar und herunterladbar, sonst nur für freigeschaltete Konten. Der Schlüssel ist der Ordnername in der Ablage; ihn nach dem ersten Hochladen nicht mehr ändern.'
+    bereiche:
+      type: list
+      label: Bereiche
+      style: vertical
+      btnLabel: 'Bereich hinzufügen'
+      fields:
+        .schluessel:
+          type: text
+          label: 'Schlüssel (a–z, 0–9, - und _)'
+          validate: { required: true, pattern: '[a-z0-9_-]+' }
+        .titel:
+          type: text
+          label: Titel
+          validate: { required: true }
+        .oeffentlich:
+          type: toggle
+          label: 'Öffentlich'
+          default: 0
+          options: { 1: Ja, 0: Nein }
+          validate: { type: bool }
+    zugang_titel:
+      type: section
+      title: Zugang
+    auth.registrierung:
+      type: toggle
+      label: 'Selbstregistrierung erlaubt'
+      default: 1
+      options: { 1: Ja, 0: Nein }
+      validate: { type: bool }
+    auth.modus:
+      type: select
+      label: 'Neue Konten'
+      default: approval
+      options:
+        approval: 'Erst nach Freigabe aktiv (Freigabe-Link per E-Mail)'
+        open: 'Sofort nach Bestätigung der E-Mail-Adresse aktiv'
+    auth.benachrichtigung:
+      type: email
+      label: 'Freigabe-Anfragen an'
+      help: 'Leer = Empfänger aus der E-Mail-Konfiguration der Website'
+      validate: { type: email }
+    seite_titel:
+      type: section
+      title: Seite und Ablage
+    seitenname:
+      type: text
+      label: 'Name in E-Mails und Einwilligung'
+      help: 'Leer = Titel der Website'
+    seite:
+      type: text
+      label: 'Route der Medienseite'
+      default: /medien
+    datenschutz_seite:
+      type: text
+      label: 'Route der Datenschutzerklärung'
+      default: /datenschutz
+    media_dir:
+      type: text
+      label: 'Ablageordner (relativ zum Grav-Ordner, ausserhalb des Webverzeichnisses)'
+      default: ../medienseite-dateien
+    verwalten_permission:
+      type: text
+      label: 'Recht zum Verwalten der Dateien'
+      default: admin.login
+    max_upload_mb:
+      type: number
+      label: 'Maximale Dateigrösse beim Hochladen (MB)'
+      default: 50
+      validate: { type: int, min: 1, max: 500 }
+    akzentfarbe:
+      type: text
+      label: 'Akzentfarbe der Hinweis- und Freigabeseiten'
+      default: '#2f6b62'
