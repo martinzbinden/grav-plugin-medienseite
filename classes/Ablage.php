@@ -29,7 +29,7 @@ class Ablage
         $this->bereiche = $bereiche;
         $this->vorschauDir = rtrim($vorschauDir, '/');
         if (!is_dir($this->root)) {
-            @mkdir($this->root, 0750, true);
+            @mkdir($this->root, 0755, true);
         }
         // Sichere Voreinstellung, bis syncZugriff() die Regeln setzt
         if (is_dir($this->root) && !is_file($this->root . '/.htaccess')) {
@@ -47,13 +47,33 @@ class Ablage
      */
     public function syncZugriff(bool $wurzelOeffentlich): void
     {
+        $this->lesbar($this->root);
         $this->schreibeRegel($this->root, $wurzelOeffentlich);
         foreach ($this->bereiche as $key => $b) {
             $dir = $this->root . '/' . $key;
             if (!is_dir($dir)) {
-                @mkdir($dir, 0750, true);
+                @mkdir($dir, 0755, true);
             }
+            $this->lesbar($dir);
             $this->schreibeRegel($dir, !empty($b['oeffentlich']));
+        }
+    }
+
+    /**
+     * Der Webserver muss Ordner und Dateien lesen koennen, damit er sie direkt
+     * ausliefert - der Schutz gesperrter Bereiche liegt in der .htaccess.
+     */
+    private function lesbar(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        @chmod($dir, 0755);
+        foreach (scandir($dir) ?: [] as $name) {
+            $f = $dir . '/' . $name;
+            if ($name !== '.' && $name !== '..' && is_file($f) && (fileperms($f) & 0004) === 0) {
+                @chmod($f, 0644);
+            }
         }
     }
 
@@ -212,7 +232,7 @@ class Ablage
         if (!$dir) {
             return [false, 'Unbekannter Bereich.', null];
         }
-        @mkdir($dir, 0750, true);
+        @mkdir($dir, 0755, true);
         $basis = $this->dateiname(pathinfo($orig, PATHINFO_FILENAME));
         $name = $basis . '.' . $ext;
         for ($i = 2; file_exists($dir . '/' . $name); $i++) {
@@ -221,7 +241,7 @@ class Ablage
         if (!move_uploaded_file($f['tmp_name'], $dir . '/' . $name)) {
             return [false, $orig . ': Speichern fehlgeschlagen.', null];
         }
-        @chmod($dir . '/' . $name, 0640);
+        @chmod($dir . '/' . $name, 0644);
         // Anfangstitel aus dem Originalnamen (der gespeicherte Dateiname ist ohne Umlaute)
         $this->speichereMeta($bereich, $name, ['titel' => $this->titelAusName($orig)]);
         return [true, $orig . ' hochgeladen.', $name];

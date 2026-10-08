@@ -169,7 +169,7 @@ class MedienseitePlugin extends Plugin
     {
         $root = $this->mediaRoot();
         $wurzel = (bool) $this->cfg('wurzel_oeffentlich', false);
-        $stand = md5(json_encode([$this->bereiche(), $wurzel, is_dir($root . '/_zugang'), 2]));
+        $stand = md5(json_encode([$this->bereiche(), $wurzel, is_dir($root . '/_zugang'), 3]));
         $merker = $root . '/.medienseite-stand';
         if (is_file($merker) && trim((string) @file_get_contents($merker)) === $stand) {
             return;
