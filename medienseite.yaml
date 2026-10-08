@@ -1,9 +1,17 @@
 enabled: true
 # Name in E-Mails und in der Einwilligung - leer = Titel der Website (site.title)
 seitenname: ''
-# Ablage ausserhalb des Webverzeichnisses, relativ zum Grav-Ordner.
-# Je Bereich ein Unterordner; Anmelde-Zustand (Codes, Freigabe-Links) in _zugang/.
+# Ablage, relativ zum Grav-Ordner - am besten ausserhalb des Webverzeichnisses.
+# Je Bereich ein Unterordner. Kann zugleich Grav's Medienordner sein
+# (user/media als Verknuepfung darauf), dann erscheinen die Bereiche im Admin
+# unter "Medien". Direkter Abruf: oeffentliche Bereiche frei, gesperrte nicht
+# (das Plugin schreibt je Ordner eine .htaccess).
 media_dir: '../medienseite-dateien'
+# Dateien ausserhalb der Bereiche (z.B. im Admin unter "Medien" hochgeladen)
+# direkt abrufbar - noetig, um sie in Seiten einzubinden
+wurzel_oeffentlich: false
+# Anmelde-Zustand (Codes, Freigabe-Links), gesperrt per .htaccess
+daten_dir: 'user://data/medienseite'
 # Route der Medienseite (fuer Links in E-Mails) und der Datenschutzerklaerung
 seite: '/medien'
 datenschutz_seite: '/datenschutz'

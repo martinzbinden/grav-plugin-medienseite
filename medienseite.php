@@ -29,6 +29,8 @@ class MedienseitePlugin extends Plugin
 
     public function onPluginsInitialized(): void
     {
+        // Auch im Admin: nach dem Umschalten "oeffentlich" sofort gueltig
+        $this->zugriffAbgleichen();
         if ($this->isAdmin()) {
             return;
         }
@@ -119,7 +121,62 @@ class MedienseitePlugin extends Plugin
 
     private function zugang(): Zugang
     {
-        return new Zugang($this->grav, $this->mediaRoot(), (array) $this->cfg('auth', []) + ['seitenname' => $this->seitenname()], $this->seite());
+        return new Zugang($this->grav, $this->datenDir(), (array) $this->cfg('auth', []) + ['seitenname' => $this->seitenname()], $this->seite());
+    }
+
+    /**
+     * Anmeldedaten (Codes, Freigaben) - bewusst NICHT im Medienordner, der
+     * auch Grav's Medienordner sein kann. Fruehere Ablage <media>/_zugang
+     * wird einmalig hierher verschoben.
+     */
+    private function datenDir(): string
+    {
+        $locator = $this->grav['locator'];
+        $cfg = (string) $this->cfg('daten_dir', 'user://data/medienseite');
+        $dir = str_contains($cfg, '://') ? (string) $locator->findResource($cfg, true, true) : rtrim(GRAV_ROOT, '/') . '/' . trim($cfg, '/');
+        $alt = $this->mediaRoot() . '/_zugang';
+        if (is_dir($alt) && !is_dir($dir)) {
+            @mkdir(dirname($dir), 0750, true);
+            @rename($alt, $dir);
+        }
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0700, true);
+        }
+        if (is_dir($alt)) {
+            // Verschieben ging nicht (Rechte): Dateien kopieren, Rest sperren -
+            // der Medienordner kann oeffentlich abrufbar sein
+            foreach (glob($alt . '/*') ?: [] as $f) {
+                $ziel = $dir . '/' . basename($f);
+                if (is_file($f) && !is_file($ziel) && @copy($f, $ziel)) {
+                    @chmod($ziel, 0600);
+                    @unlink($f);
+                }
+            }
+            @unlink($alt . '/.htaccess');
+            @rmdir($alt);
+            if (is_dir($alt)) {
+                @file_put_contents($alt . '/.htaccess', "Require all denied\n");
+            }
+        }
+        if (is_dir($dir) && !is_file($dir . '/.htaccess')) {
+            @file_put_contents($dir . '/.htaccess', "Require all denied\n");
+        }
+        return $dir;
+    }
+
+    /** Webserver-Regeln der Ablage nachfuehren, sobald sich Bereiche oder Einstellungen aendern */
+    private function zugriffAbgleichen(): void
+    {
+        $root = $this->mediaRoot();
+        $wurzel = (bool) $this->cfg('wurzel_oeffentlich', false);
+        $stand = md5(json_encode([$this->bereiche(), $wurzel, is_dir($root . '/_zugang'), 2]));
+        $merker = $root . '/.medienseite-stand';
+        if (is_file($merker) && trim((string) @file_get_contents($merker)) === $stand) {
+            return;
+        }
+        $this->ablage()->syncZugriff($wurzel);
+        $this->datenDir();
+        @file_put_contents($merker, $stand . "\n");
     }
 
     // ---------- Routen ----------

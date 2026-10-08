@@ -8,9 +8,12 @@ zugänglich.
   (Name, Organisation/Medium, Einwilligung), bestätigen die Adresse per Code und
   werden per Freigabe-Link freigeschaltet (oder sofort, Modus `open`).
   Konten mit Admin-Rechten melden sich weiterhin mit Passwort an.
-- **Ablage ausserhalb des Webverzeichnisses**; Dateien werden nur nach der
-  Zugriffsprüfung ausgeliefert. Erlaubte Typen: Bilder, SVG, PDF, ZIP, Office.
-  SVGs werden mit Sandbox-Header ausgeliefert.
+- **Ablage ausserhalb des Webverzeichnisses**, optional zugleich Grav's
+  Medienordner (siehe unten): Dateien öffentlicher Bereiche sind direkt
+  abrufbar und lassen sich in Seiten einbinden, gesperrte Bereiche werden nur
+  nach der Zugriffsprüfung ausgeliefert. Das Plugin pflegt dafür je Ordner eine
+  `.htaccess`. Erlaubte Typen: Bilder, SVG, PDF, ZIP, Office. SVGs werden mit
+  Sandbox-Header ausgeliefert.
 - **Verwaltung direkt auf der Seite** für Konten mit `admin.login`:
   Hochladen (mehrere Dateien), Titel/Beschreibung/Copyright bearbeiten, Löschen.
 - **Vorschaubilder** für Bilder (GD) sowie TIFF/PDF (Imagick, PDF nur mit Ghostscript).
@@ -52,6 +55,22 @@ Grav 1.7/2.x mit den Plugins `login` und `email` (Mailversand eingerichtet).
    ```
 
 Alle Optionen mit Kommentaren: `medienseite.yaml`.
+
+### Als Grav-Medienordner (Admin → Medien)
+
+Damit die Dateien auch beim Bearbeiten von Seiten gefunden und eingebunden
+werden können, `user/media` als Verknüpfung auf den Ablageordner anlegen:
+
+```sh
+cd user && ln -s ../../example-medien media     # Pfad wie media_dir, von user/ aus
+```
+
+Die Bereiche erscheinen dann im Admin unter „Medien“ als Ordner; was dort
+hochgeladen wird, steht auch auf der Medienseite und umgekehrt. Titel und
+Beschreibung werden in `<datei>.meta.yaml` unter `titel`/`title` und
+`beschreibung`/`description` gespeichert. Mit `wurzel_oeffentlich: true` sind
+auch Dateien ausserhalb der Bereiche direkt abrufbar. Die Anmeldedaten liegen
+getrennt davon in `daten_dir` (Standard `user/data/medienseite`).
 
 ## Routen
 

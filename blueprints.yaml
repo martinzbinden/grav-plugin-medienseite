@@ -1,7 +1,7 @@
 name: Medienseite
 slug: medienseite
 type: plugin
-version: 1.0.0
+version: 1.1.0
 description: 'Downloadseite in Bereichen (z.B. Pressebilder, Dokumente, Logos). Jeder Bereich öffentlich oder nur für registrierte Nutzerinnen und Nutzer: Anmeldung per E-Mail-Code, Registrierung mit Freigabe.'
 icon: download
 author:
@@ -83,8 +83,16 @@ form:
       default: /datenschutz
     media_dir:
       type: text
-      label: 'Ablageordner (relativ zum Grav-Ordner, ausserhalb des Webverzeichnisses)'
+      label: 'Ablageordner (relativ zum Grav-Ordner, am besten ausserhalb des Webverzeichnisses)'
       default: ../medienseite-dateien
+      help: 'Kann zugleich Grav''s Medienordner sein (user/media als Verknüpfung darauf) – dann erscheinen die Bereiche im Admin unter „Medien“.'
+    wurzel_oeffentlich:
+      type: toggle
+      label: 'Dateien ausserhalb der Bereiche direkt abrufbar'
+      help: 'Z.B. im Admin unter „Medien“ hochgeladene Dateien – nötig, um sie in Seiten einzubinden. Öffentliche Bereiche sind immer direkt abrufbar, gesperrte nie.'
+      default: 0
+      options: { 1: Ja, 0: Nein }
+      validate: { type: bool }
     verwalten_permission:
       type: text
       label: 'Recht zum Verwalten der Dateien'

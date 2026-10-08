@@ -13,7 +13,7 @@ use Grav\Common\Uri;
  *   Modus «approval» (Standard): Konto bleibt gesperrt, bis der Vorstand es per Klick freigibt.
  *   Modus «open»: Konto ist nach der Code-Bestätigung sofort aktiv.
  * - Konten mit Admin-/API-Rechten sind von der Code-Anmeldung ausgeschlossen (Passwort-Anmeldung).
- * Zustand (Codes, Freigabe-Links, Limiten) liegt ausserhalb des Webverzeichnisses in <media_dir>/_zugang.
+ * Zustand (Codes, Freigabe-Links, Limiten) liegt in einem eigenen Datenordner (daten_dir, Standard user/data/medienseite, per .htaccess gesperrt).
  */
 class Zugang
 {
@@ -33,10 +33,10 @@ class Zugang
 
     private string $seite;
 
-    public function __construct(Grav $grav, string $mediaDir, array $cfg, string $seite)
+    public function __construct(Grav $grav, string $datenDir, array $cfg, string $seite)
     {
         $this->grav = $grav;
-        $this->dir = rtrim($mediaDir, '/') . '/_zugang';
+        $this->dir = rtrim($datenDir, '/');
         $this->seite = $seite;
         $this->cfg = [
             'mode' => $cfg['modus'] ?? 'approval',

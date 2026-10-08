@@ -5,8 +5,11 @@ use Grav\Common\Yaml;
 
 /**
  * Dateiablage der Medienseite: <root>/<bereich>/<datei> plus <datei>.meta.yaml
- * (Titel, Beschreibung, Copyright). Liegt ausserhalb des Webverzeichnisses;
- * ausgeliefert wird nur ueber das Plugin nach der Zugriffspruefung.
+ * (Titel, Beschreibung, Copyright). Der Ordner kann zugleich Grav's Medien-
+ * ordner sein (user/media als Verknuepfung darauf): dann erscheinen die
+ * Bereiche im Admin unter "Medien". Direkter Abruf per Webserver wird je
+ * Bereich ueber eine verwaltete .htaccess geregelt (syncZugriff): oeffentliche
+ * Bereiche frei, gesperrte nur ueber das Plugin nach der Zugriffspruefung.
  */
 class Ablage
 {
@@ -28,9 +31,46 @@ class Ablage
         if (!is_dir($this->root)) {
             @mkdir($this->root, 0750, true);
         }
-        // Zusaetzliche Sperre, falls der Ordner doch unter einem Webverzeichnis liegt
+        // Sichere Voreinstellung, bis syncZugriff() die Regeln setzt
         if (is_dir($this->root) && !is_file($this->root . '/.htaccess')) {
-            @file_put_contents($this->root . '/.htaccess', "Require all denied\n");
+            @file_put_contents($this->root . '/.htaccess', self::MARKE . "\nRequire all denied\n");
+        }
+    }
+
+    public const MARKE = '# medienseite: automatisch verwaltet - Aenderungen werden ueberschrieben';
+
+    /**
+     * Webserver-Regeln setzen: Wurzel (Dateien ausserhalb der Bereiche) und je
+     * Bereich frei oder gesperrt. Legt fehlende Bereichsordner an, damit sie
+     * auch im Admin unter "Medien" erscheinen. Fremde .htaccess-Dateien (ohne
+     * Marke) bleiben unangetastet.
+     */
+    public function syncZugriff(bool $wurzelOeffentlich): void
+    {
+        $this->schreibeRegel($this->root, $wurzelOeffentlich);
+        foreach ($this->bereiche as $key => $b) {
+            $dir = $this->root . '/' . $key;
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0750, true);
+            }
+            $this->schreibeRegel($dir, !empty($b['oeffentlich']));
+        }
+    }
+
+    private function schreibeRegel(string $dir, bool $frei): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        $f = $dir . '/.htaccess';
+        $soll = self::MARKE . "\n" . ($frei ? 'Require all granted' : 'Require all denied') . "\n";
+        $ist = is_file($f) ? (string) @file_get_contents($f) : null;
+        // Ohne Marke nur die fruehere Voreinstellung des Plugins ersetzen
+        if ($ist !== null && !str_contains($ist, self::MARKE) && trim($ist) !== 'Require all denied') {
+            return;
+        }
+        if ($ist !== $soll) {
+            @file_put_contents($f, $soll);
         }
     }
 
@@ -56,8 +96,9 @@ class Ablage
             $meta = $this->meta($bereich, $name);
             $out[] = [
                 'name' => $name,
-                'titel' => $meta['titel'] ?? $this->titelAusName($name),
-                'beschreibung' => $meta['beschreibung'] ?? '',
+                // titel/beschreibung (Medienseite) oder title/description (Grav-Admin)
+                'titel' => $meta['titel'] ?? $meta['title'] ?? $this->titelAusName($name),
+                'beschreibung' => $meta['beschreibung'] ?? $meta['description'] ?? '',
                 'copyright' => $meta['copyright'] ?? '',
                 'typ' => self::ERLAUBT[$ext],
                 'ext' => strtoupper($ext),
@@ -135,13 +176,18 @@ class Ablage
             return false;
         }
         $meta = $this->meta($bereich, $name);
+        // Titel und Beschreibung zusaetzlich unter den Schluesseln, die der
+        // Grav-Admin (Medien) verwendet
+        $spiegel = ['titel' => 'title', 'beschreibung' => 'description'];
         foreach (['titel' => 160, 'beschreibung' => 1000, 'copyright' => 160] as $k => $max) {
             if (array_key_exists($k, $felder)) {
                 $v = $this->sauber((string) $felder[$k], $max);
-                if ($v === '') {
-                    unset($meta[$k]);
-                } else {
-                    $meta[$k] = $v;
+                foreach (array_filter([$k, $spiegel[$k] ?? null]) as $schluessel) {
+                    if ($v === '') {
+                        unset($meta[$schluessel]);
+                    } else {
+                        $meta[$schluessel] = $v;
+                    }
                 }
             }
         }
